@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion := "3.2.1"
-ThisBuild / version := "0.2.1"
+ThisBuild / version := "0.4.3"
 ThisBuild / versionScheme := Some("strict")
 
 ThisBuild / developers := List(
