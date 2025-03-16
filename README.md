@@ -1,6 +1,6 @@
 # ZIO Quartz H2 Examples
 
-This repository contains two example HTTP/2 server implementations using the ZIO Quartz H2 library. Both examples demonstrate how to create a high-performance HTTP/2 server with ZIO, but they use different I/O subsystems.
+This repository contains example HTTP/2 server implementations using the ZIO Quartz H2 library. Both examples demonstrate how to create a high-performance HTTP/2 server with ZIO.
 
 This implementation leverages Linux's IO-Uring interface for significantly improved I/O performance by reducing context switches and copy operations. It requires:
 - Linux kernel 5.1 or newer for basic IO-Uring support
@@ -17,6 +17,22 @@ sbt run
 ```
 
 This runs a minimal HTTP/2 server that demonstrates a simple route function with just a GET / endpoint that returns an empty OK response. It's ideal for understanding the basic structure of a ZIO Quartz H2 server without additional complexity.
+
+## Switching Between NIO and IO-Uring
+
+By default, the server runs using Java NIO. To enable the high-performance Linux IO-Uring implementation:
+
+1. Open `src/main/scala/Run.scala`
+2. Comment out the NIO line:
+```scala
+// exitCode <- new QuartzH2Server("localhost", 8443, 16000, ctx).startIO(R, filter, sync = false)
+```
+3. Uncomment the IO-Uring line:
+```scala
+exitCode <- new QuartzH2Server("localhost", 8443, 16000, ctx).startIO_linuxOnly(1, R, filter)
+```
+
+Note that IO-Uring is only available on Linux systems with kernel version 5.1 or newer, with 5.5+ recommended for optimal performance.
 
 ## Key Concepts
 
