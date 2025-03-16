@@ -84,6 +84,9 @@ object Run extends ZIOAppDefault {
   def run = {
     val env = ZLayer.fromZIO(ZIO.succeed("Hello"))
     (for {
+      _ <- zio.Console.printLine("****************************************************************************************")
+      _ <- zio.Console.printLine("\u001B[31mUse https://localhost:8443/doc/index.html to read the index.html file\u001B[0m")
+      _ <- zio.Console.printLine("****************************************************************************************")
       ctx <- QuartzH2Server.buildSSLContext("TLS", "keystore.jks", "password")
 
       args <- this.getArgs
