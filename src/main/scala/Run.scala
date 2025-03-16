@@ -5,23 +5,19 @@
   * accesses the ZIO environment.
   */
 
-import zio.{ZIO, Task, Chunk, Promise, ExitCode, ZIOApp, ZLayer}
+import zio.{ZIO, ZLayer}
 import zio.ZIOAppDefault
-import zio.stream.{ZStream, ZPipeline, ZSink}
+import zio.stream.ZStream
 import io.quartz.QuartzH2Server
 import io.quartz.http2._
-import io.quartz.http2.model.{Headers, Method, ContentType, Request, Response}
+import io.quartz.http2.model.{Method, ContentType, Request, Response}
 import io.quartz.http2.model.Method._
-import io.quartz.http2.routes.Routes
-import io.quartz.http2.model.Cookie
 import io.quartz.http2.routes.HttpRouteIO
 import io.quartz.http2.routes.WebFilter
 
-import zio.logging.LogFormat
+import ch.qos.logback.classic.Level
 import zio.logging.backend.SLF4J
-import zio.LogLevel
 
-import io.quartz.util.MultiPart
 import io.quartz.http2.model.StatusCode
 import java.io.File
 
@@ -89,6 +85,12 @@ object Run extends ZIOAppDefault {
     val env = ZLayer.fromZIO(ZIO.succeed("Hello"))
     (for {
       ctx <- QuartzH2Server.buildSSLContext("TLS", "keystore.jks", "password")
+
+      args <- this.getArgs
+      _ <- ZIO.when(args.find(_ == "--debug").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.DEBUG)))
+      _ <- ZIO.when(args.find(_ == "--error").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.ERROR)))
+      _ <- ZIO.when(args.find(_ == "--trace").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.TRACE)))
+      _ <- ZIO.when(args.find(_ == "--off").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.OFF)))
 
       exitCode <- new QuartzH2Server("localhost", 8443, 16000, ctx).startIO(R, filter, sync = false)
 

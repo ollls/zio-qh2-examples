@@ -40,8 +40,3 @@ This functional approach enables clean implementation of access control, rate li
 ## SSL Configuration
 
 All examples use SSL and require a keystore file named `keystore.jks` with password "password" in the appropriate directory.
-
-## Changing Debug Level
-
-To change the default debug level, modify the logback configuration file at:
-`src/main/resources/logback-test.xml`

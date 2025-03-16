@@ -54,6 +54,7 @@ lazy val root = (project in file("."))
     scalacOptions ++= Seq(
       "-deprecation",
       "-feature",
-      "-no-indent"
+      "-no-indent",
+      "-Wunused:imports"
     )
   )
