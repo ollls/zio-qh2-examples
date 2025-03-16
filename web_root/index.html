@@ -17,6 +17,10 @@
             background-color: #ebf5ff;
             border-left: 3px solid #3182ce;
         }
+        .hero-image {
+            max-height: 180px;
+            object-fit: contain;
+        }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -29,7 +33,13 @@
         <!-- Main Content -->
         <div class="flex-1 overflow-auto p-8">
             <div class="max-w-4xl mx-auto">
-                <h1 class="text-3xl font-bold text-blue-600 mb-6 pb-2 border-b border-gray-200">ZIO Quartz H2 Example</h1>
+                <!-- Header with Logo -->
+                <div class="flex flex-col md:flex-row items-center justify-between mb-8 pb-4 border-b border-gray-200">
+                    <div class="flex items-center mb-4 md:mb-0">
+                        <img src="/doc/quartz-h2.jpeg" alt="ZIO Quartz H2 Logo" class="hero-image mr-4 rounded-lg shadow-md">
+                        <h1 class="text-3xl font-bold text-blue-600">ZIO Quartz H2 Example</h1>
+                    </div>
+                </div>
                 
                 <p class="text-lg mb-6">This is a demonstration of serving static files with ZIO Quartz H2 HTTP/2 server.</p>
                 
