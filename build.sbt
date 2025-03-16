@@ -13,7 +13,7 @@ ThisBuild / developers := List(
   )
 )
 
-ThisBuild / licenses := List("Apache 2" -> new URL("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+ThisBuild / licenses := List("Apache 2" -> java.net.URI.create("http://www.apache.org/licenses/LICENSE-2.0.txt").toURL)
 ThisBuild / homepage := Some(url("https://github.com/ollls/zio-quartz-h2"))
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 ThisBuild / credentials += Credentials(
@@ -40,41 +40,20 @@ ThisBuild / scmInfo := Some(
 
 Runtime / unmanagedClasspath += baseDirectory.value / "src" / "main" / "resources"
 
-// Common settings for both projects
-lazy val commonSettings = Seq(
-  organization := "io.github.ollls",
-  libraryDependencies += scalaTest % Test,
-  libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.6.0",
-  libraryDependencies += "dev.zio" %% "zio" % "2.1.16",
-  scalacOptions ++= Seq(
-    "-deprecation",
-    "-feature",
-    "-no-indent"
-  )
-)
-
-// Main project that aggregates the two subprojects
+// Main project
 lazy val root = (project in file("."))
-  .aggregate(nio, iouring)
   .settings(
     name := "zio-qh2-examples",
-    publish / skip := true
-  )
-
-// NIO project using standard Java NIO
-lazy val nio = (project in file("NIO"))
-  .settings(
-    commonSettings,
-    name := "zio-qh2-nio-example",
+    organization := "io.github.ollls",
+    publish / skip := true,
     Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
-    Compile / mainClass := Some("example.nio.NioApp")
-  )
-
-// IOURING project using Linux IO-Uring
-lazy val iouring = (project in file("IOURING"))
-  .settings(
-    commonSettings,
-    name := "zio-qh2-iouring-example",
-    Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
-    Compile / mainClass := Some("example.iouring.IouringApp")
+    Compile / mainClass := Some("Run"),
+    libraryDependencies += scalaTest % Test,
+    libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.6.0",
+    libraryDependencies += "dev.zio" %% "zio" % "2.1.16",
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-feature",
+      "-no-indent"
+    )
   )
