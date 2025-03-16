@@ -1,4 +1,4 @@
-package example
+package example.iouring
 
 import zio.{ZIO, Task, Chunk, Promise, ExitCode, ZIOApp, ZLayer}
 import zio.ZIOAppDefault
@@ -11,6 +11,7 @@ import io.quartz.http2.routes.Routes
 import io.quartz.http2.model.Cookie
 import io.quartz.http2.routes.HttpRouteIO
 import io.quartz.http2.routes.WebFilter
+import ch.qos.logback.classic.Level
 
 import zio.logging.LogFormat
 import zio.logging.backend.SLF4J
@@ -18,23 +19,35 @@ import zio.LogLevel
 
 import io.quartz.util.MultiPart
 import io.quartz.http2.model.StatusCode
+import java.util.concurrent.Executors
 
 object param1 extends QueryParam("param1")
 object param2 extends QueryParam("param2")
 
-object MyApp extends ZIOAppDefault {
+object IouringApp extends ZIOAppDefault {
 
+  // Number of IO-Uring instances to use
+  val NUMBER_OF_RING_INSTANCES = 1
+
+  // Configure ZIO runtime with proper executor settings for IO-Uring
   override val bootstrap =
-    zio.Runtime.removeDefaultLoggers ++ SLF4J.slf4j ++ zio.Runtime.enableWorkStealing
+    zio.Runtime.removeDefaultLoggers ++ SLF4J.slf4j ++
+      zio.Runtime.setExecutor(
+        zio.Executor.fromJavaExecutor(
+          Executors.newWorkStealingPool(Runtime.getRuntime().availableProcessors() - NUMBER_OF_RING_INSTANCES)
+        )
+      ) ++
+      zio.Runtime.setBlockingExecutor(zio.Executor.fromJavaExecutor(Executors.newCachedThreadPool()))
 
-  val filter: WebFilter = (r: Request) =>
+  val filter: WebFilter[Any] = (r: Request) =>
     ZIO
       .succeed(
-        Response
-          .Error(StatusCode.Forbidden)
-          .asText("Denied: " + r.uri.getPath())
+        Either.cond(
+          r.uri.getPath().endsWith("test70.jpeg"),
+          r,
+          Response.Error(StatusCode.Forbidden).asText("Denied: " + r.uri.getPath())
+        )
       )
-      .when(r.uri.getPath().endsWith("test70.jpeg"))
 
   val R: HttpRouteIO[String] = {
 
@@ -96,7 +109,8 @@ object MyApp extends ZIOAppDefault {
       } yield (Response.Ok().asText("OK"))
 
     // best path for h2spec
-    case GET -> Root => ZIO.attempt(Response.Ok().asText("OK"))
+    case GET -> Root =>
+      ZIO.attempt(Response.Ok().asText("OK"))
 
     case req @ POST -> Root =>
       for {
@@ -130,15 +144,33 @@ object MyApp extends ZIOAppDefault {
         .contentType(ContentType.contentTypeFromFileName(FILE)))
   }
 
+  // Connection event handlers
+  def onConnect(id: Long) = {
+    ZIO.logTrace(s"connected - $id")
+  }
+
+  def onDisconnect(id: Long) = {
+    ZIO.logTrace(s"disconnected - $id")
+  }
+
   def run = {
     val env = ZLayer.fromZIO(ZIO.succeed("Hello ZIO World!"))
     (for {
+      args <- this.getArgs
+      _ <- ZIO.when(args.find(_ == "--debug").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.DEBUG)))
+      _ <- ZIO.when(args.find(_ == "--error").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.ERROR)))
+      _ <- ZIO.when(args.find(_ == "--trace").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.TRACE)))
+      _ <- ZIO.when(args.find(_ == "--off").isDefined)(ZIO.attempt(QuartzH2Server.setLoggingLevel(Level.OFF)))
+
       ctx <- QuartzH2Server.buildSSLContext("TLS", "keystore.jks", "password")
-      exitCode <- new QuartzH2Server("localhost", 8443, 16000, ctx).startIO(
-        R,
-        filter,
-        sync = false
-      )
+      exitCode <- new QuartzH2Server(
+        "localhost",
+        8443,
+        16000,
+        ctx,
+        onConnect = onConnect,
+        onDisconnect = onDisconnect
+      ).startIO_linuxOnly(NUMBER_OF_RING_INSTANCES, R, filter) // Using IO-Uring on Linux
 
     } yield (exitCode)).provideSomeLayer(env)
   }

@@ -1,8 +1,8 @@
 import Dependencies._
 
-ThisBuild / scalaVersion := "3.2.1"
-ThisBuild / version := "0.4.3"
-ThisBuild / versionScheme := Some("strict")
+ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / version := "0.6.0"
+ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / developers := List(
   Developer(
@@ -40,23 +40,41 @@ ThisBuild / scmInfo := Some(
 
 Runtime / unmanagedClasspath += baseDirectory.value / "src" / "main" / "resources"
 
-lazy val root = (project in file("."))
-  .settings(
-    organization := "io.github.ollls",
-    name := "zio-qh2-examples",
-    libraryDependencies += scalaTest % Test,
-    libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.5.4",
-    libraryDependencies += "dev.zio" %% "zio" % "2.0.5"
-    //libraryDependencies += "dev.zio" %% "zio-logging-slf4j" % "2.1.5",
-    //libraryDependencies += "org.slf4j" % "slf4j-api" % "2.0.4",
-    //libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.3.5"
+// Common settings for both projects
+lazy val commonSettings = Seq(
+  organization := "io.github.ollls",
+  libraryDependencies += scalaTest % Test,
+  libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.6.0",
+  libraryDependencies += "dev.zio" %% "zio" % "2.1.16",
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-feature",
+    "-no-indent"
   )
-
-
-scalacOptions ++= Seq(
-  "-deprecation",
-  "-feature",
-  "-no-indent"
 )
 
-// See https://www.scala-sbt.org/1.x/docs/Using-Sonatype.html for instructions on how to publish to Sonatype.
+// Main project that aggregates the two subprojects
+lazy val root = (project in file("."))
+  .aggregate(nio, iouring)
+  .settings(
+    name := "zio-qh2-examples",
+    publish / skip := true
+  )
+
+// NIO project using standard Java NIO
+lazy val nio = (project in file("NIO"))
+  .settings(
+    commonSettings,
+    name := "zio-qh2-nio-example",
+    Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
+    Compile / mainClass := Some("example.nio.NioApp")
+  )
+
+// IOURING project using Linux IO-Uring
+lazy val iouring = (project in file("IOURING"))
+  .settings(
+    commonSettings,
+    name := "zio-qh2-iouring-example",
+    Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
+    Compile / mainClass := Some("example.iouring.IouringApp")
+  )
