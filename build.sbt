@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion := "3.3.3"
-ThisBuild / version := "0.6.0"
+ThisBuild / version := "0.7"
 ThisBuild / versionScheme := Some("early-semver")
 
 ThisBuild / developers := List(
@@ -49,7 +49,7 @@ lazy val root = (project in file("."))
     Compile / scalaSource := baseDirectory.value / "src" / "main" / "scala",
     Compile / mainClass := Some("Run"),
     libraryDependencies += scalaTest % Test,
-    libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.6.0",
+    libraryDependencies += "io.github.ollls" %% "zio-quartz-h2" % "0.7",
     libraryDependencies += "dev.zio" %% "zio" % "2.1.16",
     scalacOptions ++= Seq(
       "-deprecation",
